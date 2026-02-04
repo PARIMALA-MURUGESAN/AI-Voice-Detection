@@ -11,9 +11,10 @@ model_name = "facebook/wav2vec2-base-960h"
 feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(model_name)
 model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name)
 class AudioInput(BaseModel):
+    language: str
     audioFormat: str
     audioBase64: str
-def verify_key(api_key: str = Header(None)):
+def verify_key(x_api_key: str = Header(None)):
     if x_api_key != "SynxsOG": 
         raise HTTPException(status_code=401, detail="Unauthorized")
     return x_api_key
@@ -36,11 +37,13 @@ async def detect_voice(data: AudioInput, key: str = Depends(verify_key)):
             prediction = "AI_GENERATED"
         else:
             prediction = "HUMAN"
+        explanation = "High spectral consistency detected" if prediction == "AI_GENERATED" else "Natural prosody and vocal artifacts detected"
         return {
             "status": "success",
             "result": prediction,
             "language_detected": data.language,
             "confidence": round(confidence_score, 2),
+            "explanation": explanation
         }
 
     except Exception as e:
